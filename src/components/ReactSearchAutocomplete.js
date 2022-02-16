@@ -29,7 +29,7 @@ export default function ReactSearchAutocomplete(props) {
     styling,
     resultStringKeyName,
     inputSearchString,
-    formatResult,
+    formatResult
   } = props
 
   const theme = { ...defaultTheme, ...styling }
@@ -41,6 +41,8 @@ export default function ReactSearchAutocomplete(props) {
   const [searchString, setSearchString] = useState(inputSearchString)
   const [results, setResults] = useState()
 
+  const [keyLocation, setKeyLocation] = useState(null)
+
   const callOnSearch = (keyword) => {
     let newResults = []
     if (keyword?.length > 0) {
@@ -50,6 +52,7 @@ export default function ReactSearchAutocomplete(props) {
     } else {
       setResults(newResults)
     }
+    setKeyLocation(null)
   }
 
   const handleOnSearch = React.useCallback(
@@ -65,6 +68,7 @@ export default function ReactSearchAutocomplete(props) {
 
   useEffect(() => {
     searchString?.length > 0 && results?.length > 0 && setResults(fuseResults(searchString))
+    setKeyLocation(null)
   }, [items])
 
   const handleOnClick = (result) => {
@@ -84,6 +88,31 @@ export default function ReactSearchAutocomplete(props) {
     handleOnSearch(keyword)
   }
 
+  const handleKeyDown = (e) => {
+    if (e.keyCode === 38 && results?.length > 0) {
+      e.preventDefault()
+      if (keyLocation === null || keyLocation === 0) {
+        setKeyLocation(results.length - 1)
+        setSearchString(results[results.length - 1][resultStringKeyName])
+      } else if (keyLocation !== null) {
+        setKeyLocation(keyLocation - 1)
+        setSearchString(results[keyLocation - 1][resultStringKeyName])
+      }
+    } else if (e.keyCode === 40 && results?.length > 0) {
+      e.preventDefault()
+      if (keyLocation == null || keyLocation === results.length - 1) {
+        setKeyLocation(0)
+        setSearchString(results[0][resultStringKeyName])
+      } else if (keyLocation < results.length - 1) {
+        setKeyLocation(keyLocation + 1)
+        setSearchString(results[keyLocation + 1][resultStringKeyName])
+      }
+    } else if (e.keyCode === 13 && results?.length > 0) {
+      handleOnClick(results[keyLocation])
+      setSearchString(results[keyLocation][resultStringKeyName])
+    }
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <StyledReactSearchAutocomplete>
@@ -98,6 +127,7 @@ export default function ReactSearchAutocomplete(props) {
             placeholder={placeholder}
             showIcon={showIcon}
             showClear={showClear}
+            onKeyDown={handleKeyDown}
           />
           <Results
             results={results}
@@ -108,6 +138,7 @@ export default function ReactSearchAutocomplete(props) {
             maxResults={maxResults}
             resultStringKeyName={resultStringKeyName}
             formatResult={formatResult}
+            keyLocation={keyLocation}
           />
         </div>
       </StyledReactSearchAutocomplete>
